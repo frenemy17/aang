@@ -1,0 +1,37 @@
+{
+  "name": "aang-ai",
+  "version": "0.1.0",
+  "description": "Aang — Autonomous Terminal Coding Agent & SWE-Bench Harness",
+  "main": "bin/aang.js",
+  "bin": {
+    "aang": "./bin/aang.js",
+    "ion": "./bin/aang.js"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "coding-agent",
+    "swe-bench",
+    "terminal",
+    "cli",
+    "groq",
+    "llm",
+    "developer-tools"
+  ],
+  "author": "",
+  "license": "MIT",
+  "files": [
+    "bin",
+    "aang",
+    "ion",
+    "pyproject.toml",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "scripts": {
+    "start": "node bin/aang.js",
+    "test": "node sample-project/tests/run_all.js"
+  }
+}
