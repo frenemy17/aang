@@ -1,0 +1,301 @@
+import http.server
+import json
+import os
+import sys
+import threading
+import time
+import subprocess
+import urllib.parse
+from typing import Optional
+
+from ion.agent.logger import IonLogger
+from ion.agent.prompts import SYSTEM_PROMPT
+from ion.config.settings import settings
+
+PORT = 5173
+HTML_FILE_PATH = os.path.join(os.path.dirname(__file__), "web", "index.html")
+
+# Track active background run if any
+_current_run = {
+    "active": False,
+    "task": "",
+    "type": "",
+    "start_time": 0
+}
+
+def execute_harness_task(task_type: str, custom_task: Optional[str] = None):
+    """Executes a harness task in a separate process/thread so the UI remains responsive."""
+    global _current_run
+    _current_run["active"] = True
+    _current_run["type"] = task_type
+    _current_run["start_time"] = time.time()
+    
+    ion_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    venv_python = os.path.join(ion_root, "venv", "bin", "python")
+    if not os.path.exists(venv_python):
+        venv_python = sys.executable
+        
+    env = os.environ.copy()
+    if not env.get("GROQ_API_KEY") and settings.api_key:
+        env["GROQ_API_KEY"] = settings.api_key
+        
+    try:
+        if task_type == "easy":
+            tmp_repo = "/tmp/ion-test-easy"
+            subprocess.run(f"rm -rf {tmp_repo} && cp -r {ion_root}/tests/easy {tmp_repo} && cd {tmp_repo} && git init && git add -A && git commit -m 'init' 2>/dev/null", shell=True)
+            task_cmd = f"Fix the failing tests. Run: python -m pytest test_calc.py"
+            repo = tmp_repo
+        elif task_type == "medium":
+            tmp_repo = "/tmp/ion-test-medium"
+            subprocess.run(f"rm -rf {tmp_repo} && cp -r {ion_root}/tests/medium {tmp_repo} && cd {tmp_repo} && git init && git add -A && git commit -m 'init' 2>/dev/null", shell=True)
+            task_cmd = f"Fix the failing tests. Run: python -m pytest test_cart.py"
+            repo = tmp_repo
+        elif task_type == "hard":
+            tmp_repo = "/tmp/ion-test-hard"
+            subprocess.run(f"rm -rf {tmp_repo} && cp -r {ion_root}/tests/hard {tmp_repo} && cd {tmp_repo} && git init && git add -A && git commit -m 'init' 2>/dev/null", shell=True)
+            task_cmd = f"Fix the failing tests. Run: python -m pytest"
+            repo = tmp_repo
+        else:
+            repo = os.path.join(ion_root, "sample-project")
+            task_cmd = custom_task or "Fix the bug in the project"
+
+        cmd = [
+            venv_python, "-m", "ion.main",
+            "--repo", repo,
+            "--log", os.path.join(ion_root, "ion.log"),
+            task_cmd
+        ]
+        
+        proc = subprocess.run(cmd, cwd=ion_root, env=env, capture_output=True, text=True)
+    finally:
+        _current_run["active"] = False
+
+class IonAPIHandler(http.server.SimpleHTTPRequestHandler):
+    def do_HEAD(self):
+        parsed = urllib.parse.urlparse(self.path)
+        path = parsed.path
+        ASSETS_DIR = os.path.join(os.path.dirname(__file__), "web", "assets")
+        if path in ("/", "/index.html"):
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            return
+        elif path in ("/favicon.ico", "/favicon.png"):
+            self.send_response(200)
+            self.send_header("Content-Type", "image/png")
+            self.send_header("Cache-Control", "public, max-age=86400")
+            self.end_headers()
+            return
+        elif path.startswith("/assets/"):
+            filename = os.path.basename(path)
+            asset_path = os.path.join(ASSETS_DIR, filename)
+            if os.path.exists(asset_path) and os.path.isfile(asset_path):
+                self.send_response(200)
+                self.end_headers()
+                return
+        self.send_response(404)
+        self.end_headers()
+
+    def do_GET(self):
+        parsed = urllib.parse.urlparse(self.path)
+        path = parsed.path
+        
+        ASSETS_DIR = os.path.join(os.path.dirname(__file__), "web", "assets")
+
+        if path == "/" or path == "/index.html":
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            if os.path.exists(HTML_FILE_PATH):
+                with open(HTML_FILE_PATH, 'rb') as f:
+                    self.wfile.write(f.read())
+            else:
+                self.wfile.write(b"<h1>Aang Log Dashboard HTML not found.</h1>")
+            return
+
+        elif path in ("/favicon.ico", "/favicon.png"):
+            favicon_path = os.path.join(ASSETS_DIR, "favicon.png")
+            if os.path.exists(favicon_path):
+                self.send_response(200)
+                self.send_header("Content-Type", "image/png")
+                self.send_header("Cache-Control", "public, max-age=86400")
+                self.end_headers()
+                with open(favicon_path, "rb") as f:
+                    self.wfile.write(f.read())
+                return
+
+        elif path.startswith("/assets/"):
+            filename = os.path.basename(path)
+            asset_path = os.path.join(ASSETS_DIR, filename)
+            if os.path.exists(asset_path) and os.path.isfile(asset_path):
+                ext = os.path.splitext(filename)[1].lower()
+                mime_map = {
+                    ".webp": "image/webp",
+                    ".gif": "image/gif",
+                    ".png": "image/png",
+                    ".jpg": "image/jpeg",
+                    ".jpeg": "image/jpeg",
+                    ".svg": "image/svg+xml",
+                    ".css": "text/css",
+                    ".js": "application/javascript"
+                }
+                content_type = mime_map.get(ext, "application/octet-stream")
+                self.send_response(200)
+                self.send_header("Content-Type", content_type)
+                self.send_header("Cache-Control", "public, max-age=3600")
+                self.end_headers()
+                with open(asset_path, "rb") as f:
+                    self.wfile.write(f.read())
+                return
+            else:
+                self.send_response(404)
+                self.end_headers()
+                return
+            
+        elif path == "/api/status":
+            run_info = dict(_current_run)
+            latest_path = os.path.join(".ion", "latest_session.json")
+            active_model = settings.model
+            active_provider = settings.provider
+            if os.path.exists(latest_path):
+                try:
+                    with open(latest_path, 'r') as f:
+                        latest_data = json.load(f)
+                    if latest_data.get("status") == "running":
+                        run_info["active"] = True
+                        run_info["type"] = "agent"
+                        run_info["task"] = latest_data.get("task", "")
+                        run_info["session_id"] = latest_data.get("id", "")
+                    else:
+                        run_info["last_session_id"] = latest_data.get("id", "")
+                        run_info["last_status"] = latest_data.get("status", "")
+                    if latest_data.get("model"):
+                        active_model = latest_data.get("model")
+                    if latest_data.get("provider"):
+                        active_provider = latest_data.get("provider")
+                except Exception:
+                    pass
+            self._send_json({
+                "status": "ok",
+                "current_run": run_info,
+                "model": active_model,
+                "provider": active_provider
+            })
+            return
+            
+        elif path == "/api/sessions":
+            sessions = IonLogger.list_sessions()
+            self._send_json(sessions)
+            return
+            
+        elif path.startswith("/api/sessions/"):
+            session_id = path.replace("/api/sessions/", "").strip()
+            data = IonLogger.get_session(session_id)
+            if data:
+                self._send_json(data)
+            else:
+                self._send_json({"error": "Session not found"}, 404)
+            return
+            
+        elif path == "/api/latest":
+            latest = None
+            latest_path = os.path.join(".ion", "latest_session.json")
+            if os.path.exists(latest_path):
+                try:
+                    with open(latest_path, 'r') as f:
+                        latest = json.load(f)
+                except Exception:
+                    pass
+            if not latest:
+                sessions = IonLogger.list_sessions()
+                if sessions:
+                    latest = IonLogger.get_session(sessions[0]["id"])
+            self._send_json(latest or {"error": "No sessions yet"})
+            return
+            
+        elif path == "/api/raw-log":
+            content = ""
+            if os.path.exists("ion.log"):
+                with open("ion.log", "r") as f:
+                    content = f.read()
+            self._send_json({"log": content})
+            return
+            
+        elif path == "/api/prompts":
+            self._send_json({
+                "system_prompt": SYSTEM_PROMPT,
+                "model": settings.model,
+                "provider": settings.provider
+            })
+            return
+
+        super().do_GET()
+
+    def do_POST(self):
+        parsed = urllib.parse.urlparse(self.path)
+        path = parsed.path
+        
+        if path == "/api/run":
+            length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(length).decode("utf-8")
+            try:
+                data = json.loads(body)
+            except Exception:
+                data = {}
+                
+            task_type = data.get("type", "easy")
+            custom_task = data.get("task")
+            
+            if _current_run["active"]:
+                self._send_json({"error": "A task run is already in progress"}, 409)
+                return
+                
+            thread = threading.Thread(target=execute_harness_task, args=(task_type, custom_task), daemon=True)
+            thread.start()
+            
+            self._send_json({
+                "status": "started",
+                "type": task_type,
+                "message": f"Harness run '{task_type}' initiated."
+            })
+            return
+
+        self._send_json({"error": "Not Found"}, 404)
+
+    def _send_json(self, data: Any, status: int = 200):
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
+        self.end_headers()
+        self.wfile.write(json.dumps(data, indent=2).encode("utf-8"))
+
+def run_server(port: int = PORT):
+    os.makedirs(os.path.dirname(HTML_FILE_PATH), exist_ok=True)
+    server_address = ("", port)
+    
+    # Try port, if in use try port + 1
+    for attempt in range(5):
+        target_port = port + attempt
+        try:
+            httpd = http.server.ThreadingHTTPServer(("", target_port), IonAPIHandler)
+            print(f"==================================================")
+            print(f"🚀 Aang Log & Harness Dashboard running on:")
+            print(f"   http://localhost:{target_port}")
+            print(f"==================================================")
+            try:
+                httpd.serve_forever()
+            except KeyboardInterrupt:
+                print("\nShutting down server...")
+                httpd.server_close()
+            return
+        except OSError as e:
+            if "Address already in use" in str(e):
+                continue
+            raise
+
+if __name__ == "__main__":
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else PORT
+    run_server(port)

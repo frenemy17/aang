@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aang — Coding Agent Harness & Operation Inspector</title>
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #07090e;
+      --bg-card: rgba(15, 23, 42, 0.75);
+      --bg-card-hover: rgba(30, 41, 59, 0.85);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(99, 102, 241, 0.3);
+      --primary: #6366f1;
+      --primary-light: #818cf8;
+      --cyan: #06b6d4;
+      --emerald: #10b981;
+      --amber: #f59e0b;
+      --rose: #f43f5e;
+      --purple: #a855f7;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.07) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(6, 182, 212, 0.07) 0%, transparent 40%);
+      color: var(--text-main);
+      font-family: var(--font-ui);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Header */
+    header {
+      background: rgba(11, 15, 25, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.85rem 1.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .logo-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 16px rgba(99, 102, 241, 0.4);
+      overflow: hidden;
+      background: #0f172a;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      position: relative;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .logo-badge img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
+      border-radius: 7px;
+      transition: all 0.3s ease;
+    }
+
+    .logo-badge.avatar-state {
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.8), 0 0 35px rgba(99, 102, 241, 0.6);
+      border-color: rgba(6, 182, 212, 0.9);
+      animation: avatar-pulse 1.4s infinite alternate ease-in-out;
+    }
+
+    @keyframes avatar-pulse {
+      0% {
+        box-shadow: 0 0 12px rgba(6, 182, 212, 0.6), 0 0 25px rgba(99, 102, 241, 0.4);
+        transform: scale(1);
+      }
+      100% {
+        box-shadow: 0 0 24px rgba(6, 182, 212, 0.95), 0 0 45px rgba(99, 102, 241, 0.7);
+        transform: scale(1.08);
+      }
+    }
+
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(120deg, #fff, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      color: var(--emerald);
+    }
+
+    .status-badge.running {
+      background: rgba(245, 158, 11, 0.1);
+      border-color: rgba(245, 158, 11, 0.3);
+      color: var(--amber);
+    }
+
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: currentColor;
+      box-shadow: 0 0 8px currentColor;
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.45rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-main);
+      font-family: var(--font-ui);
+    }
+
+    .btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-glow);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), #4f46e5);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: white;
+      box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, var(--primary-light), var(--primary));
+      box-shadow: 0 4px 16px rgba(99, 102, 241, 0.45);
+    }
+
+    .btn-easy {
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #34d399;
+    }
+    .btn-easy:hover {
+      background: rgba(16, 185, 129, 0.15);
+    }
+
+    .btn-medium {
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #fbbf24;
+    }
+    .btn-medium:hover {
+      background: rgba(245, 158, 11, 0.15);
+    }
+
+    .btn-hard {
+      border-color: rgba(244, 63, 94, 0.4);
+      color: #fb7185;
+    }
+    .btn-hard:hover {
+      background: rgba(244, 63, 94, 0.15);
+    }
+
+    /* Layout */
+    .app-container {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      flex: 1;
+      height: calc(100vh - 61px);
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background: rgba(11, 15, 25, 0.5);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .sidebar-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+      font-weight: 700;
+    }
+
+    .session-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .session-item {
+      padding: 0.75rem 0.85rem;
+      border-radius: 8px;
+      background: rgba(17, 24, 39, 0.4);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .session-item:hover {
+      background: rgba(30, 41, 59, 0.6);
+      border-color: var(--border-color);
+    }
+
+    .session-item.active {
+      background: rgba(99, 102, 241, 0.12);
+      border-color: rgba(99, 102, 241, 0.4);
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.15);
+    }
+
+    .session-task-title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 0.35rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .session-meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .badge-pill {
+      font-size: 0.65rem;
+      padding: 0.1rem 0.45rem;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .badge-easy { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .badge-medium { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .badge-hard { background: rgba(244, 63, 94, 0.15); color: #fb7185; }
+    .badge-custom { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+
+    /* Main Content */
+    .main-content {
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* KPI Summary Strip */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1rem 1.15rem;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+
+    .kpi-card:hover {
+      border-color: var(--border-glow);
+      transform: translateY(-2px);
+    }
+
+    .kpi-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-dim);
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+    }
+
+    .kpi-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      letter-spacing: -0.02em;
+    }
+
+    .kpi-subtext {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 0.35rem;
+    }
+
+    /* Navigation Tabs */
+    .tabs-bar {
+      display: flex;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.25rem;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-family: var(--font-ui);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .tab-btn.active {
+      color: #fff;
+      background: rgba(99, 102, 241, 0.15);
+      border-bottom: 2px solid var(--primary);
+    }
+
+    /* Timeline & Operations */
+    .timeline-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .step-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      overflow: hidden;
+      transition: border-color 0.2s ease;
+    }
+
+    .step-card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .step-header {
+      padding: 0.85rem 1.25rem;
+      background: rgba(15, 23, 42, 0.95);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .step-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .step-pill {
+      font-size: 0.72rem;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      background: rgba(99, 102, 241, 0.2);
+      color: var(--primary-light);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+
+    .step-pill.preflight {
+      background: rgba(6, 182, 212, 0.15);
+      color: var(--cyan);
+      border-color: rgba(6, 182, 212, 0.3);
+    }
+
+    .step-body {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    /* Sub-panels inside steps */
+    .sub-section {
+      background: rgba(10, 14, 23, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .sub-header {
+      padding: 0.5rem 0.85rem;
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.73rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .sub-content {
+      padding: 0.85rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      line-height: 1.5;
+      overflow-x: auto;
+    }
+
+    .reasoning-text {
+      font-family: var(--font-ui);
+      font-size: 0.88rem;
+      line-height: 1.6;
+      color: #e2e8f0;
+      padding: 0.85rem;
+      white-space: pre-wrap;
+    }
+
+    .tool-call-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0.75rem 0.85rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .tool-call-row:last-child { border-bottom: none; }
+
+    .tool-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--cyan);
+      font-family: var(--font-mono);
+    }
+
+    .terminal-output {
+      background: #05070a;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 6px;
+      padding: 0.75rem;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: #38bdf8;
+      white-space: pre-wrap;
+      max-height: 280px;
+      overflow-y: auto;
+    }
+
+    /* Diff View */
+    .diff-view {
+      background: #05070a;
+      border-radius: 6px;
+      padding: 0.85rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      line-height: 1.4;
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    .diff-add { color: #34d399; background: rgba(16, 185, 129, 0.12); }
+    .diff-del { color: #f87171; background: rgba(244, 63, 94, 0.12); }
+    .diff-header { color: #818cf8; }
+
+    /* Raw Terminal Tab */
+    .raw-terminal {
+      background: #06080d;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.25rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      line-height: 1.6;
+      color: #cbd5e1;
+      height: 600px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    /* System Prompt Tab */
+    .prompt-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      line-height: 1.7;
+      color: #94a3b8;
+      white-space: pre-wrap;
+    }
+
+    /* Modal / Popups */
+    .notice-banner {
+      background: linear-gradient(90deg, rgba(99, 102, 241, 0.15), rgba(6, 182, 212, 0.15));
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 8px;
+      padding: 0.85rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header>
+    <div class="brand">
+      <div id="aangBadge" class="logo-badge" title="Aang — Autonomous Coding Agent">
+        <img id="aangAvatar" src="/assets/aang_blink.webp" alt="Aang Avatar" width="36" height="36">
+      </div>
+      <div>
+        <div class="brand-title">Aang Harness Inspector</div>
+        <div class="brand-subtitle">Autonomous Coding Agent</div>
+      </div>
+    </div>
+
+    <div id="liveStatusBadge" class="status-badge">
+      <span class="pulse-dot"></span>
+      <span id="liveStatusText">IDLE</span>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn btn-easy" onclick="triggerRun('easy')" title="Run easy test (Target: 1 Iteration)">
+        ⚡ Easy (1-Iter Target)
+      </button>
+      <button class="btn btn-medium" onclick="triggerRun('medium')" title="Run medium test (Multi-bug)">
+        ⚖ Medium
+      </button>
+      <button class="btn btn-hard" onclick="triggerRun('hard')" title="Run hard test (Cross-file)">
+        🛡 Hard
+      </button>
+      <button class="btn btn-primary" onclick="refreshData()">
+        ↺ Refresh
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Grid Layout -->
+  <div class="app-container">
+    
+    <!-- Left Sidebar: Session List -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-title">Execution History</span>
+        <span id="sessionCount" class="badge-pill" style="background: rgba(255,255,255,0.08); color: var(--text-dim);">0</span>
+      </div>
+      <div class="session-list" id="sessionList">
+        <div style="padding: 1rem; color: var(--text-dim); text-align: center; font-size: 0.8rem;">
+          Loading sessions...
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right Main Stage -->
+    <main class="main-content">
+      
+      <!-- Notice / Model Info Banner -->
+      <div class="notice-banner">
+        <div>
+          <strong>Active Provider:</strong> <span id="modelTag" style="color: var(--cyan); font-family: var(--font-mono);">Groq / openai/gpt-oss-120b</span>
+          <span style="margin: 0 0.5rem; opacity: 0.4;">|</span>
+          <strong>Preflight Intelligence:</strong> <span style="color: var(--emerald);">Enabled (Auto-Diagnose &amp; 1-Turn Target)</span>
+        </div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);" id="timestampTag">
+          --
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Outcome Status</div>
+          <div class="kpi-value" id="kpiStatus" style="color: var(--emerald);">--</div>
+          <div class="kpi-subtext" id="kpiSummary">--</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-label">Iterations Used</div>
+          <div class="kpi-value" id="kpiIterations" style="color: var(--primary-light);">--</div>
+          <div class="kpi-subtext" id="kpiTargetComparison">Target: 1 Iteration</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-label">Total Duration</div>
+          <div class="kpi-value" id="kpiDuration" style="color: var(--cyan);">--</div>
+          <div class="kpi-subtext" id="kpiLatencyBreakdown">LLM + Tool Execution</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-label">Files Modified</div>
+          <div class="kpi-value" id="kpiFilesModified" style="color: var(--purple);">--</div>
+          <div class="kpi-subtext" id="kpiFilesList">--</div>
+        </div>
+      </div>
+
+      <!-- Tabs Bar -->
+      <div class="tabs-bar">
+        <button class="tab-btn active" onclick="switchTab('timeline')">
+          📋 Timeline &amp; Operations
+        </button>
+        <button class="tab-btn" onclick="switchTab('diff')">
+          📝 File Diff
+        </button>
+        <button class="tab-btn" onclick="switchTab('prompt')">
+          ⚙ System Prompt &amp; Rules
+        </button>
+        <button class="tab-btn" onclick="switchTab('raw')">
+          📜 Raw Session Log
+        </button>
+      </div>
+
+      <!-- Tab 1: Timeline & Operations -->
+      <div id="tabTimeline" class="timeline-container">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Tab 2: File Diff -->
+      <div id="tabDiff" style="display: none;">
+        <div class="step-card">
+          <div class="step-header">
+            <span class="step-pill" style="background: rgba(168, 85, 247, 0.2); color: var(--purple);">Git Changes</span>
+            <span style="font-size: 0.75rem; color: var(--text-dim); font-family: var(--font-mono);">Unified Diff</span>
+          </div>
+          <div class="step-body">
+            <pre class="diff-view" id="diffContent">No file changes recorded in this session.</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: System Prompt & Rules -->
+      <div id="tabPrompt" style="display: none;">
+        <div class="prompt-box" id="systemPromptContent">
+          Loading system prompt...
+        </div>
+      </div>
+
+      <!-- Tab 4: Raw Session Log -->
+      <div id="tabRaw" style="display: none;">
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
+          <button class="btn" onclick="copyRawLog()">Copy Raw Log</button>
+        </div>
+        <div class="raw-terminal" id="rawLogContent">
+          Loading raw log...
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    let currentSessionId = null;
+    let sessions = [];
+    let autoRefreshTimer = null;
+    let currentTab = 'timeline';
+    let userPinnedSession = false;
+    let latestRunInfo = null;
+
+    async function init() {
+      await fetchStatus();
+      await fetchSessions();
+      await fetchPrompts();
+      startAutoRefresh();
+    }
+
+    async function fetchStatus() {
+      try {
+        const res = await fetch('/api/status?_t=' + Date.now());
+        const data = await res.json();
+        latestRunInfo = data.current_run || null;
+        
+        const badge = document.getElementById('liveStatusBadge');
+        const text = document.getElementById('liveStatusText');
+        const avatar = document.getElementById('aangAvatar');
+        const avatarBadge = document.getElementById('aangBadge');
+        
+        if (latestRunInfo && latestRunInfo.active) {
+          badge.className = 'status-badge running';
+          const typeStr = (latestRunInfo.type || 'AGENT').toUpperCase();
+          text.textContent = `RUNNING (${typeStr})`;
+          if (avatar && !avatar.src.endsWith('/assets/aang_avatar.webp')) {
+            avatar.src = '/assets/aang_avatar.webp';
+          }
+          if (avatarBadge) avatarBadge.classList.add('avatar-state');
+        } else {
+          badge.className = 'status-badge';
+          text.textContent = 'READY (LIVE SYNC ON)';
+          if (avatar && !avatar.src.endsWith('/assets/aang_blink.webp')) {
+            avatar.src = '/assets/aang_blink.webp';
+          }
+          if (avatarBadge) avatarBadge.classList.remove('avatar-state');
+        }
+
+        if (data.model) {
+          document.getElementById('modelTag').textContent = `${data.provider} / ${data.model}`;
+        }
+      } catch (e) {
+        console.error("Status fetch error", e);
+      }
+    }
+
+    async function fetchSessions() {
+      try {
+        const res = await fetch('/api/sessions?_t=' + Date.now());
+        if (!res.ok) return;
+        sessions = await res.json();
+        
+        document.getElementById('sessionCount').textContent = sessions.length;
+        renderSessionList();
+        
+        // If an active session is running in terminal, follow it automatically unless user explicitly pinned an older session
+        if (latestRunInfo && latestRunInfo.active && latestRunInfo.session_id) {
+          if (!userPinnedSession || currentSessionId !== latestRunInfo.session_id) {
+            currentSessionId = latestRunInfo.session_id;
+          }
+        }
+
+        if (sessions.length > 0) {
+          const exists = sessions.some(s => s.id === currentSessionId);
+          if (!currentSessionId || !exists) {
+            currentSessionId = sessions[0].id;
+            userPinnedSession = false;
+          }
+        }
+
+        if (currentSessionId) {
+          await loadSessionDetails(currentSessionId);
+        }
+      } catch (e) {
+        console.error("Sessions fetch error", e);
+      }
+    }
+
+    function renderSessionList() {
+      const container = document.getElementById('sessionList');
+      if (!sessions || sessions.length === 0) {
+        container.innerHTML = '<div style="padding:1rem;color:var(--text-dim);font-size:0.8rem;text-align:center;">No sessions recorded yet.<br>Click "Easy" above or run in terminal!</div>';
+        return;
+      }
+
+      container.innerHTML = sessions.map(s => {
+        const isSelected = s.id === currentSessionId ? 'active' : '';
+        const taskLower = (s.task || "").toLowerCase();
+        let badgeType = 'badge-custom';
+        let badgeText = 'CUSTOM';
+        if (taskLower.includes('easy') || taskLower.includes('calc')) { badgeType = 'badge-easy'; badgeText = 'EASY'; }
+        else if (taskLower.includes('medium') || taskLower.includes('cart')) { badgeType = 'badge-medium'; badgeText = 'MEDIUM'; }
+        else if (taskLower.includes('hard') || taskLower.includes('models')) { badgeType = 'badge-hard'; badgeText = 'HARD'; }
+
+        const statusColor = s.status === 'completed' ? 'var(--emerald)' : (s.status === 'running' ? 'var(--amber)' : 'var(--rose)');
+        const timeStr = s.start_time ? s.start_time.split('T')[1]?.slice(0, 8) : '';
+
+        return `
+          <div class="session-item ${isSelected}" onclick="selectSession('${s.id}')">
+            <div class="session-task-title" title="${escapeHtml(s.task)}">
+              ${escapeHtml(s.task || s.id)}
+            </div>
+            <div class="session-meta-row">
+              <span class="badge-pill ${badgeType}">${badgeText}</span>
+              <span style="color: ${statusColor}; font-weight:600;">
+                ${s.iterations} iter ${s.status === 'completed' ? '✓' : (s.status === 'running' ? '⏳' : '')}
+              </span>
+              <span>${s.duration || 0}s</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function selectSession(id) {
+      currentSessionId = id;
+      userPinnedSession = true;
+      renderSessionList();
+      await loadSessionDetails(id);
+    }
+
+    async function loadSessionDetails(id) {
+      try {
+        const res = await fetch(`/api/sessions/${id}?_t=` + Date.now());
+        if (!res.ok) {
+          // Fallback to /api/latest if id not found
+          const lRes = await fetch('/api/latest?_t=' + Date.now());
+          if (lRes.ok) {
+            const lData = await lRes.json();
+            if (lData && !lData.error) {
+              renderSessionView(lData);
+              return;
+            }
+          }
+          return;
+        }
+        const data = await res.json();
+        if (data && !data.error) {
+          renderSessionView(data);
+        }
+      } catch (e) {
+        console.error("Session detail error", e);
+      }
+    }
+
+    function renderSessionView(session) {
+      if (!session || session.error) return;
+
+      // Update KPIs
+      const isCompleted = session.status === 'completed';
+      const isRunning = session.status === 'running';
+      const statusEl = document.getElementById('kpiStatus');
+      statusEl.textContent = isCompleted ? 'PASSED ✓' : (isRunning ? 'RUNNING ⏳' : 'FAILED ✗');
+      statusEl.style.color = isCompleted ? 'var(--emerald)' : (isRunning ? 'var(--amber)' : 'var(--rose)');
+      
+      document.getElementById('kpiSummary').textContent = session.summary || (isCompleted ? 'All tests verified' : (isRunning ? 'Turn / task in progress...' : 'Failed or stopped'));
+      
+      const iterEl = document.getElementById('kpiIterations');
+      iterEl.textContent = `${session.iterations || 0}`;
+      const targetCmp = document.getElementById('kpiTargetComparison');
+      if (session.iterations <= (session.target_iterations || 1) && isCompleted) {
+        targetCmp.textContent = `★ Optimal! Target of ${session.target_iterations || 1} met`;
+        targetCmp.style.color = 'var(--emerald)';
+      } else {
+        targetCmp.textContent = `Target: ${session.target_iterations || 1} iteration(s)`;
+        targetCmp.style.color = 'var(--text-muted)';
+      }
+
+      document.getElementById('kpiDuration').textContent = `${session.duration || 0}s`;
+      document.getElementById('kpiFilesModified').textContent = `${(session.files_modified || []).length}`;
+      document.getElementById('kpiFilesList').textContent = (session.files_modified || []).join(', ') || 'None modified';
+      document.getElementById('timestampTag').textContent = session.start_time ? new Date(session.start_time).toLocaleString() : '';
+
+      // Render Diff Tab
+      const diffContainer = document.getElementById('diffContent');
+      if (session.diff) {
+        diffContainer.innerHTML = formatDiff(session.diff);
+      } else {
+        diffContainer.textContent = 'No file changes recorded in this session.';
+      }
+
+      // Render Timeline
+      const timeline = document.getElementById('tabTimeline');
+      let html = '';
+
+      // 1. Preflight card
+      if (session.preflight) {
+        const pf = session.preflight;
+        const pfStatusColor = pf.exit_code === 0 ? 'var(--emerald)' : 'var(--amber)';
+        html += `
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title-wrap">
+                <span class="step-pill preflight">PREFLIGHT DIAGNOSTICS</span>
+                <span style="font-weight: 600; font-size: 0.85rem;">Autonomous Repo Scan &amp; Pre-Test</span>
+              </div>
+              <span style="font-size: 0.75rem; color: ${pfStatusColor}; font-family: var(--font-mono); font-weight: 600;">
+                Test Exit Code: ${pf.exit_code}
+              </span>
+            </div>
+            <div class="step-body">
+              <div class="sub-section">
+                <div class="sub-header">
+                  <span>Preflight Test Command</span>
+                  <span>${escapeHtml(pf.command || 'None')}</span>
+                </div>
+                ${pf.stdout ? `<pre class="terminal-output">${escapeHtml(pf.stdout)}</pre>` : ''}
+              </div>
+
+              ${pf.focal_files && pf.focal_files.length > 0 ? `
+                <div class="sub-section">
+                  <div class="sub-header">
+                    <span>Focal Files Injected into Model Context</span>
+                    <span style="color: var(--cyan);">${pf.focal_files.join(', ')}</span>
+                  </div>
+                  <div class="sub-content" style="color: var(--text-muted);">
+                    The harness identified these target files and provided them upfront so the agent solves the bug without wasting exploration turns.
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }
+
+      // 2. Iteration cards
+      if (session.steps && session.steps.length > 0) {
+        session.steps.forEach((step, idx) => {
+          const resp = step.llm_response || {};
+          const tools = step.tool_executions || [];
+          const verif = step.verification;
+
+          html += `
+            <div class="step-card">
+              <div class="step-header">
+                <div class="step-title-wrap">
+                  <span class="step-pill">ITERATION ${step.iteration}</span>
+                  <span style="font-size: 0.85rem; font-weight: 600;">Agent Reasoning &amp; Execution</span>
+                </div>
+                <div style="font-size: 0.75rem; font-family: var(--font-mono); color: var(--text-dim);">
+                  LLM: ${resp.duration || 0}s | Tools: ${tools.reduce((acc, t) => acc + (t.duration || 0), 0).toFixed(2)}s
+                </div>
+              </div>
+
+              <div class="step-body">
+                <!-- LLM Reasoning / Output -->
+                ${resp.text ? `
+                  <div class="sub-section">
+                    <div class="sub-header">
+                      <span>Model Reasoning &amp; Plan</span>
+                      <span style="color: var(--primary-light);">Finish: ${resp.finish_reason || 'stop'}</span>
+                    </div>
+                    <div class="reasoning-text">${escapeHtml(resp.text)}</div>
+                  </div>
+                ` : ''}
+
+                <!-- Tool Executions -->
+                ${tools.length > 0 ? `
+                  <div class="sub-section">
+                    <div class="sub-header">
+                      <span>Tool Calls Executed (${tools.length})</span>
+                    </div>
+                    ${tools.map(t => `
+                      <div class="tool-call-row">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                          <span class="tool-tag">🛠 ${t.tool_name}()</span>
+                          <span style="font-size:0.7rem; font-family:var(--font-mono); color:var(--text-dim);">${t.duration || 0}s</span>
+                        </div>
+                        <div style="font-family:var(--font-mono); font-size:0.75rem; color:#94a3b8; background:rgba(0,0,0,0.3); padding:0.4rem; border-radius:4px; max-height:100px; overflow-y:auto;">
+                          ${escapeHtml(typeof t.arguments === 'string' ? t.arguments : JSON.stringify(t.arguments, null, 2))}
+                        </div>
+                        ${t.result ? `
+                          <div style="font-size:0.72rem; color:var(--text-dim);">Result:</div>
+                          <div class="terminal-output" style="max-height:140px;">${escapeHtml(t.result)}</div>
+                        ` : ''}
+                      </div>
+                    `).join('')}
+                  </div>
+                ` : ''}
+
+                <!-- Automatic Verification -->
+                ${verif ? `
+                  <div class="sub-section" style="border-color: ${verif.passed ? 'rgba(16,185,129,0.3)' : 'rgba(244,63,94,0.3)'};">
+                    <div class="sub-header" style="background: ${verif.passed ? 'rgba(16,185,129,0.1)' : 'rgba(244,63,94,0.1)'};">
+                      <span style="color: ${verif.passed ? 'var(--emerald)' : 'var(--rose)'}; font-weight:700;">
+                        ${verif.passed ? '✓ AUTO-VERIFICATION PASSED' : '✗ VERIFICATION FAILED'}
+                      </span>
+                      <span>${escapeHtml(verif.command)}</span>
+                    </div>
+                    ${verif.stdout ? `<pre class="terminal-output" style="max-height:120px;">${escapeHtml(verif.stdout)}</pre>` : ''}
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      // If active running step
+      if (isRunning) {
+        html += `
+          <div class="step-card" style="border-color: rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.05);">
+            <div class="step-header">
+              <div class="step-title-wrap">
+                <span class="step-pill" style="background: rgba(245, 158, 11, 0.2); color: var(--amber); border-color: rgba(245, 158, 11, 0.4);">LIVE TURN</span>
+                <span style="font-size: 0.85rem; font-weight: 600; color: var(--amber);">Executing In Terminal...</span>
+              </div>
+              <span class="pulse-dot" style="color: var(--amber);"></span>
+            </div>
+            <div class="step-body" style="color: var(--text-muted); font-size: 0.8rem; font-family: var(--font-mono);">
+              Agent is reasoning or executing tools. Live timeline refreshes automatically.
+            </div>
+          </div>
+        `;
+      } else if (!session.steps || session.steps.length === 0) {
+        html += `
+          <div style="padding: 2rem; text-align: center; color: var(--text-dim);">
+            Waiting for iteration events...
+          </div>
+        `;
+      }
+
+      timeline.innerHTML = html;
+    }
+
+    function formatDiff(diffText) {
+      if (!diffText) return 'No diff';
+      return diffText.split('\n').map(line => {
+        const escaped = escapeHtml(line);
+        if (line.startsWith('+') && !line.startsWith('+++')) {
+          return `<div class="diff-add">${escaped}</div>`;
+        } else if (line.startsWith('-') && !line.startsWith('---')) {
+          return `<div class="diff-del">${escaped}</div>`;
+        } else if (line.startsWith('@@') || line.startsWith('diff ') || line.startsWith('index ')) {
+          return `<div class="diff-header">${escaped}</div>`;
+        }
+        return `<div>${escaped}</div>`;
+      }).join('');
+    }
+
+    async function triggerRun(type) {
+      try {
+        const btn = event?.currentTarget;
+        if (btn) btn.style.opacity = '0.5';
+        
+        const res = await fetch('/api/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type })
+        });
+        const data = await res.json();
+        
+        if (btn) btn.style.opacity = '1';
+        userPinnedSession = false;
+        await fetchStatus();
+        setTimeout(refreshData, 1000);
+      } catch (e) {
+        console.error("Run error", e);
+      }
+    }
+
+    async function refreshData() {
+      userPinnedSession = false;
+      await fetchStatus();
+      await fetchSessions();
+      await fetchRawLog();
+    }
+
+    async function fetchPrompts() {
+      try {
+        const res = await fetch('/api/prompts?_t=' + Date.now());
+        const data = await res.json();
+        document.getElementById('systemPromptContent').textContent = data.system_prompt || 'No system prompt found';
+      } catch (e) {
+        console.error("Prompt fetch error", e);
+      }
+    }
+
+    async function fetchRawLog() {
+      try {
+        const res = await fetch('/api/raw-log?_t=' + Date.now());
+        const data = await res.json();
+        const el = document.getElementById('rawLogContent');
+        if (el) {
+          const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+          el.textContent = data.log || 'No raw log content found.';
+          if (isNearBottom) {
+            el.scrollTop = el.scrollHeight;
+          }
+        }
+      } catch (e) {
+        console.error("Raw log fetch error", e);
+      }
+    }
+
+    function switchTab(tabId) {
+      currentTab = tabId;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+
+      document.getElementById('tabTimeline').style.display = tabId === 'timeline' ? 'flex' : 'none';
+      document.getElementById('tabDiff').style.display = tabId === 'diff' ? 'block' : 'none';
+      document.getElementById('tabPrompt').style.display = tabId === 'prompt' ? 'block' : 'none';
+      document.getElementById('tabRaw').style.display = tabId === 'raw' ? 'block' : 'none';
+
+      if (tabId === 'raw') {
+        fetchRawLog();
+      }
+    }
+
+    function copyRawLog() {
+      const text = document.getElementById('rawLogContent').textContent;
+      navigator.clipboard.writeText(text);
+      alert('Raw log copied to clipboard!');
+    }
+
+    function startAutoRefresh() {
+      if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+      autoRefreshTimer = setInterval(async () => {
+        try {
+          await fetchStatus();
+          await fetchSessions();
+          if (currentTab === 'raw') {
+            await fetchRawLog();
+          }
+        } catch (e) {
+          console.warn("Auto refresh error", e);
+        }
+      }, 1500);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [ -f "$PROJECT_DIR/venv/bin/aang" ]; then
+    exec "$PROJECT_DIR/venv/bin/aang" "$@"
+else
+    exec python3 -m aang.main "$@"
+fi
