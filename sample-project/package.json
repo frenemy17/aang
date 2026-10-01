@@ -1,0 +1,9 @@
+{
+  "name": "async-job-pipeline",
+  "version": "1.0.0",
+  "description": "Async Background Job Queue & Worker Pipeline with Priority Scheduling",
+  "main": "src/pipeline.js",
+  "scripts": {
+    "test": "node tests/run_all.js"
+  }
+}
