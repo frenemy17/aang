@@ -41,19 +41,36 @@ def execute_harness_task(task_type: str, custom_task: Optional[str] = None):
         
     try:
         if task_type == "easy":
-            tmp_repo = "/tmp/ion-test-easy"
-            subprocess.run(f"rm -rf {tmp_repo} && cp -r {ion_root}/tests/easy {tmp_repo} && cd {tmp_repo} && git init && git add -A && git commit -m 'init' 2>/dev/null", shell=True)
-            task_cmd = f"Fix the failing tests. Run: python -m pytest test_calc.py"
+            tmp_repo = "/tmp/aang-test-easy"
+            subprocess.run(f"rm -rf {tmp_repo} && mkdir -p {tmp_repo}", shell=True)
+            with open(f"{tmp_repo}/calc.py", "w") as f:
+                f.write("def add(a, b):\n    return a - b  # bug: subtraction instead of addition\n")
+            with open(f"{tmp_repo}/test_calc.py", "w") as f:
+                f.write("from calc import add\ndef test_add():\n    assert add(2, 3) == 5\n")
+            subprocess.run(f"cd {tmp_repo} && git init && git add -A && git commit -m 'init' 2>/dev/null", shell=True)
+            task_cmd = f"Fix the failing test. Run: python -m pytest test_calc.py"
             repo = tmp_repo
         elif task_type == "medium":
-            tmp_repo = "/tmp/ion-test-medium"
-            subprocess.run(f"rm -rf {tmp_repo} && cp -r {ion_root}/tests/medium {tmp_repo} && cd {tmp_repo} && git init && git add -A && git commit -m 'init' 2>/dev/null", shell=True)
-            task_cmd = f"Fix the failing tests. Run: python -m pytest test_cart.py"
+            tmp_repo = "/tmp/aang-test-medium"
+            subprocess.run(f"rm -rf {tmp_repo} && mkdir -p {tmp_repo}", shell=True)
+            with open(f"{tmp_repo}/cart.py", "w") as f:
+                f.write("def calculate_total(items, discount=0):\n    subtotal = sum(i['price'] * i.get('qty', 1) for i in items)\n    return subtotal - (subtotal * discount / 10)  # bug: /10 instead of /100\n")
+            with open(f"{tmp_repo}/test_cart.py", "w") as f:
+                f.write("from cart import calculate_total\ndef test_cart():\n    items = [{'price': 100, 'qty': 2}]\n    assert calculate_total(items, discount=10) == 180\n")
+            subprocess.run(f"cd {tmp_repo} && git init && git add -A && git commit -m 'init' 2>/dev/null", shell=True)
+            task_cmd = f"Fix the failing test. Run: python -m pytest test_cart.py"
             repo = tmp_repo
         elif task_type == "hard":
-            tmp_repo = "/tmp/ion-test-hard"
-            subprocess.run(f"rm -rf {tmp_repo} && cp -r {ion_root}/tests/hard {tmp_repo} && cd {tmp_repo} && git init && git add -A && git commit -m 'init' 2>/dev/null", shell=True)
-            task_cmd = f"Fix the failing tests. Run: python -m pytest"
+            tmp_repo = "/tmp/aang-test-hard"
+            subprocess.run(f"rm -rf {tmp_repo} && mkdir -p {tmp_repo}", shell=True)
+            with open(f"{tmp_repo}/validator.py", "w") as f:
+                f.write("def validate_age(age):\n    return age > 18  # bug: should be >= 18\n")
+            with open(f"{tmp_repo}/user.py", "w") as f:
+                f.write("from validator import validate_age\nclass User:\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n        self.is_adult = validate_age(age)\n")
+            with open(f"{tmp_repo}/test_user.py", "w") as f:
+                f.write("from user import User\ndef test_user():\n    u = User('Alice', 18)\n    assert u.is_adult is True\n")
+            subprocess.run(f"cd {tmp_repo} && git init && git add -A && git commit -m 'init' 2>/dev/null", shell=True)
+            task_cmd = f"Fix the failing test. Run: python -m pytest"
             repo = tmp_repo
         else:
             repo = ion_root
