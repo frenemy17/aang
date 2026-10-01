@@ -56,11 +56,11 @@ def execute_harness_task(task_type: str, custom_task: Optional[str] = None):
             task_cmd = f"Fix the failing tests. Run: python -m pytest"
             repo = tmp_repo
         else:
-            repo = os.path.join(ion_root, "sample-project")
-            task_cmd = custom_task or "Fix the bug in the project"
+            repo = ion_root
+            task_cmd = custom_task or "Analyze repository and report architecture status"
 
         cmd = [
-            venv_python, "-m", "ion.main",
+            venv_python, "-m", "aang.main",
             "--repo", repo,
             "--log", os.path.join(ion_root, "aang.log"),
             task_cmd

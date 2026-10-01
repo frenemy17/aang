@@ -23,7 +23,6 @@
   "files": [
     "bin",
     "aang",
-    "ion",
     "pyproject.toml",
     "README.md"
   ],
@@ -32,6 +31,6 @@
   },
   "scripts": {
     "start": "node bin/aang.js",
-    "test": "node sample-project/tests/run_all.js"
+    "test": "node bin/aang.js --help"
   }
 }

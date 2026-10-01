@@ -12,13 +12,13 @@ install:
 	@echo "  export GROQ_API_KEY=your-key"
 
 aang:
-	$(AANG) --repo ./sample-project
+	$(AANG) --repo .
 
 tui:
-	$(AANG) --repo ./sample-project
+	$(AANG) --repo .
 
 run:
-	$(AANG) --repo ./sample-project "$(TASK)"
+	$(AANG) --repo . "$(TASK)"
 
 web:
 	$(PYTHON) -m aang.server 5173
