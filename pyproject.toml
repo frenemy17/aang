@@ -15,6 +15,11 @@ dependencies = [
 [project.scripts]
 aang = "aang.main:main"
 
+[project.urls]
+Homepage = "https://github.com/frenemy17/aang"
+Repository = "https://github.com/frenemy17/aang.git"
+Issues = "https://github.com/frenemy17/aang/issues"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

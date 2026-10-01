@@ -18,6 +18,14 @@
     "developer-tools"
   ],
   "author": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/frenemy17/aang.git"
+  },
+  "homepage": "https://github.com/frenemy17/aang#readme",
+  "bugs": {
+    "url": "https://github.com/frenemy17/aang/issues"
+  },
   "license": "MIT",
   "files": [
     "bin",
@@ -29,6 +37,7 @@
     "node": ">=16.0.0"
   },
   "scripts": {
+    "prepack": "find aang -name '*.pyc' -delete 2>/dev/null; find aang -name '__pycache__' -type d -empty -delete 2>/dev/null || true",
     "start": "node bin/aang.js",
     "test": "node bin/aang.js --help"
   }
