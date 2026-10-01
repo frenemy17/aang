@@ -1,0 +1,24 @@
+[project]
+name = "aang-ai"
+version = "0.1.0"
+description = "Aang — Autonomous Terminal Coding Agent & SWE-Bench Harness"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "rich>=13.7.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "docker>=7.0.0",
+    "requests>=2.31.0"
+]
+
+[project.scripts]
+aang = "aang.main:main"
+ion = "aang.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["aang"]

@@ -1,0 +1,17 @@
+# npm ignore file
+.env*
+!*.example
+*.log
+venv/
+.venv/
+__pycache__/
+*.pyc
+.git/
+.github/
+.pytest_cache/
+.ion/
+.aang/
+tests/
+sample-project/
+*.patch
+.tmp*
