@@ -5,7 +5,7 @@ import os
 from typing import Callable, Any, Optional, Dict, List
 from aang.agent.state import AgentState
 from aang.agent.prompts import SYSTEM_PROMPT
-from aang.agent.logger import IonLogger
+from aang.agent.logger import AangLogger
 from aang.agent.indexer import SymbolIndexer
 from aang.llm.base import LLMProvider
 from aang.llm.types import Message
@@ -15,7 +15,7 @@ from aang.sandbox.base import SandboxEnvironment
 class AgentLoop:
     def __init__(self, provider: LLMProvider, tool_router: ToolRouter, 
                  ui_callback: Callable[[AgentState], None] = None,
-                 logger: Optional[IonLogger] = None,
+                 logger: Optional[AangLogger] = None,
                  sandbox: Optional[SandboxEnvironment] = None):
         self.provider = provider
         self.tool_router = tool_router
@@ -373,7 +373,7 @@ class AgentLoop:
             prompt_parts.append(
                 "## Directive:\n"
                 "- The user gave a conversational input or greeting.\n"
-                "- Respond concisely and politely in text explaining what you can do as Ion, without calling any tools."
+                "- Respond concisely and politely in text explaining what you can do as Aang, without calling any tools."
             )
         elif wants_test_fix and test_cmd and preflight_data["exit_code"] != 0:
             preview_out = (preflight_data["stdout"] or preflight_data["stderr"])

@@ -15,8 +15,8 @@ from aang.tools import (
     ApplyPatchTool, SearchCodeTool, RunCommandTool, GitStatusTool, GitDiffTool,
     GitCheckpointTool, GitRollbackTool
 )
-from aang.agent.logger import IonLogger
-from aang.tui.app import IonTUI
+from aang.agent.logger import AangLogger
+from aang.tui.app import AangTUI
 
 console = Console()
 
@@ -51,7 +51,7 @@ def main():
         sys.exit(1)
     
     # Setup Logger
-    logger = IonLogger(log_path=args.log)
+    logger = AangLogger(log_path=args.log)
     
     # Setup Sandbox (Docker with local fallback)
     sandbox = create_sandbox(repo_path)
@@ -74,7 +74,7 @@ def main():
     api_key = settings.effective_api_key or settings.api_key or os.getenv(f"{args.provider.upper()}_API_KEY") or os.getenv("AANG_API_KEY") or os.getenv("ION_API_KEY")
     if not api_key and args.provider != "ollama":
         console.print(f"[red]Error: API key not found. Set one of:[/red]")
-        console.print(f"  export AANG_API_KEY=your-key (or ION_API_KEY)")
+        console.print(f"  export AANG_API_KEY=your-key")
         console.print(f"  export {args.provider.upper()}_API_KEY=your-key")
         sandbox.cleanup()
         sys.exit(1)
@@ -98,7 +98,7 @@ def main():
     provider = FallbackProvider([primary_provider] + backups) if backups else primary_provider
     
     # Setup TUI Control Center
-    tui = IonTUI(
+    tui = AangTUI(
         repo_path=repo_path,
         model_name=args.model,
         sandbox=sandbox,

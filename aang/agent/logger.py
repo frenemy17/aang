@@ -5,7 +5,7 @@ import re
 from datetime import datetime
 from typing import Any, Optional, Dict, List
 
-class IonLogger:
+class AangLogger:
     """Comprehensive operation logger that writes human-readable logs and structured JSON for the web frontend."""
     
     def __init__(self, log_path: str = "aang.log", session_id: Optional[str] = None, sessions_dir: str = ".aang/sessions"):
@@ -42,7 +42,7 @@ class IonLogger:
         # Write initial text header
         with open(self.log_path, 'w') as f:
             f.write(f"{'='*80}\n")
-            f.write(f"ION SESSION LOG — {self.session_id}\n")
+            f.write(f"AANG SESSION LOG — {self.session_id}\n")
             f.write(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             f.write(f"{'='*80}\n\n")
             
@@ -98,7 +98,7 @@ class IonLogger:
         
         entry = (
             f"\n\n{'='*80}\n"
-            f"ION SESSION — {self.session_id}\n"
+            f"AANG SESSION — {self.session_id}\n"
             f"Task: {task}\n"
             f"Repo: {repo_path}\n"
             f"Model: {model} ({provider})\n"
@@ -366,9 +366,9 @@ class IonLogger:
                         return json.load(f)
                 except Exception:
                     pass
-            sessions = IonLogger.list_sessions(sessions_dir)
+            sessions = AangLogger.list_sessions(sessions_dir)
             if sessions:
-                return IonLogger.get_session(sessions[0]["id"], sessions_dir)
+                return AangLogger.get_session(sessions[0]["id"], sessions_dir)
             return None
 
         fpath = os.path.join(sessions_dir, f"{session_id}.json")

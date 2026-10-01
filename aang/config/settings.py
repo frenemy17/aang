@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     command_timeout: int = 30
     
     model_config = SettingsConfigDict(
-        env_prefix="ION_", 
+        env_prefix="AANG_", 
         env_file=".env", 
         env_file_encoding="utf-8",
         extra="ignore"

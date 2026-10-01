@@ -1,1 +1,1 @@
-# Ion - Terminal Coding Agent
+# Aang - Autonomous Terminal Coding Agent

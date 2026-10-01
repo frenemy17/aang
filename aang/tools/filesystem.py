@@ -28,7 +28,7 @@ def validate_syntax_before_write(sandbox: SandboxEnvironment, path: str, content
 
         # 3. JavaScript / TypeScript validation via node -c
         elif path.endswith(".js") or path.endswith(".mjs") or path.endswith(".cjs"):
-            tmp_probe = f".ion_syntax_{abs(hash(content)) % 1000000}.js"
+            tmp_probe = f".aang_syntax_{abs(hash(content)) % 1000000}.js"
             try:
                 sandbox.write_file(tmp_probe, content)
                 code, stdout, stderr = sandbox.run_command(f"node -c {tmp_probe} 2>&1", timeout=5)

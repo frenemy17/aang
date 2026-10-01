@@ -13,8 +13,8 @@ class OpenRouterProvider(OpenAICompatibleProvider):
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
-            "HTTP-Referer": "https://github.com/ascenxion/ion",
-            "X-Title": "Ion Autonomous Coding Agent"
+            "HTTP-Referer": "https://github.com/frenemy17/aang",
+            "X-Title": "Aang Autonomous Coding Agent"
         }
 
         payload: Dict[str, Any] = {

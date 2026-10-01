@@ -13,8 +13,8 @@ class DockerSandbox(SandboxEnvironment):
         # Check if pre-baked cached image exists for instant startup (<0.5s)
         image = base_image
         try:
-            self.client.images.get("ion-sandbox:latest")
-            image = "ion-sandbox:latest"
+            self.client.images.get("aang-sandbox:latest")
+            image = "aang-sandbox:latest"
         except Exception:
             try:
                 self.client.images.get(base_image)
@@ -46,9 +46,9 @@ class DockerSandbox(SandboxEnvironment):
             self.run_command("pip install pytest 2>/dev/null", timeout=60)
             
         # Commit to cache image if we installed on base
-        if image != "ion-sandbox:latest" and c_git != 0:
+        if image != "aang-sandbox:latest" and c_git != 0:
             try:
-                self.container.commit(repository="ion-sandbox", tag="latest")
+                self.container.commit(repository="aang-sandbox", tag="latest")
             except Exception:
                 pass
         

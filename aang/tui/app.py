@@ -23,7 +23,7 @@ from aang.agent.state import AgentState
 from aang.llm import AVAILABLE_MODELS, get_provider_by_model_id, get_provider
 from aang.llm.types import Message
 from aang.agent.loop import AgentLoop
-from aang.agent.logger import IonLogger
+from aang.agent.logger import AangLogger
 from aang.sandbox.base import SandboxEnvironment
 from aang.tools.router import ToolRouter
 from aang.tui.mascot import (
@@ -44,12 +44,12 @@ BANNER = """[bold cyan]
 
 
 
-class IonTUI:
+class AangTUI:
     def __init__(self, repo_path: str, model_name: str, 
                  sandbox: Optional[SandboxEnvironment] = None,
                  provider: Any = None,
                  tool_router: Optional[ToolRouter] = None,
-                 logger: Optional[IonLogger] = None):
+                 logger: Optional[AangLogger] = None):
         self.console = Console()
         self.repo_path = os.path.abspath(repo_path)
         self.model_name = model_name
@@ -168,7 +168,7 @@ class IonTUI:
         for idx, m in enumerate(AVAILABLE_MODELS, 1):
             # Check key status
             env_key = m.get("env_key", "")
-            has_key = bool(env_key and os.getenv(env_key)) or bool(os.getenv("ION_API_KEY"))
+            has_key = bool(env_key and os.getenv(env_key)) or bool(os.getenv("AANG_API_KEY")) or bool(os.getenv("ION_API_KEY"))
             if not env_key:  # e.g. local Ollama
                 key_status = "[blue]Local (No Key)[/blue]"
             elif has_key:
@@ -222,7 +222,7 @@ class IonTUI:
         env_key = selected.get("env_key", "")
         key = os.getenv(env_key, "") if env_key else ""
         if not key:
-            key = os.getenv("OPENROUTER_API_KEY", "") or os.getenv("ION_API_KEY", "") or os.getenv("GROQ_API_KEY", "")
+            key = os.getenv("OPENROUTER_API_KEY", "") or os.getenv("AANG_API_KEY", "") or os.getenv("ION_API_KEY", "") or os.getenv("GROQ_API_KEY", "")
         if not key and hasattr(self.provider, "api_key"):
             key = getattr(self.provider, "api_key", "")
 
@@ -576,7 +576,7 @@ class IonTUI:
         else:
             summary_table.add_row("Files Modified:", "[dim]None[/dim]")
 
-        summary_table.add_row("Execution Log:", "[dim]Saved to [bold white]ion.log[/bold white] • Type [bold cyan]/log[/bold cyan] to view detailed log[/dim]")
+        summary_table.add_row("Execution Log:", "[dim]Saved to [bold white]aang.log[/bold white] • Type [bold cyan]/log[/bold cyan] to view detailed log[/dim]")
         summary_table.add_row("Next Actions:", "[dim]Use [bold cyan]/diff[/bold cyan] to inspect changes, [bold cyan]/rollback[/bold cyan] to revert, or enter another task.[/dim]")
 
         self.console.print()

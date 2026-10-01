@@ -8,7 +8,7 @@ import subprocess
 import urllib.parse
 from typing import Optional
 
-from aang.agent.logger import IonLogger
+from aang.agent.logger import AangLogger
 from aang.agent.prompts import SYSTEM_PROMPT
 from aang.config.settings import settings
 
@@ -30,8 +30,8 @@ def execute_harness_task(task_type: str, custom_task: Optional[str] = None):
     _current_run["type"] = task_type
     _current_run["start_time"] = time.time()
     
-    ion_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    venv_python = os.path.join(ion_root, "venv", "bin", "python")
+    aang_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    venv_python = os.path.join(aang_root, "venv", "bin", "python")
     if not os.path.exists(venv_python):
         venv_python = sys.executable
         
@@ -73,21 +73,21 @@ def execute_harness_task(task_type: str, custom_task: Optional[str] = None):
             task_cmd = f"Fix the failing test. Run: python -m pytest"
             repo = tmp_repo
         else:
-            repo = ion_root
+            repo = aang_root
             task_cmd = custom_task or "Analyze repository and report architecture status"
 
         cmd = [
             venv_python, "-m", "aang.main",
             "--repo", repo,
-            "--log", os.path.join(ion_root, "aang.log"),
+            "--log", os.path.join(aang_root, "aang.log"),
             task_cmd
         ]
         
-        proc = subprocess.run(cmd, cwd=ion_root, env=env, capture_output=True, text=True)
+        proc = subprocess.run(cmd, cwd=aang_root, env=env, capture_output=True, text=True)
     finally:
         _current_run["active"] = False
 
-class IonAPIHandler(http.server.SimpleHTTPRequestHandler):
+class AangAPIHandler(http.server.SimpleHTTPRequestHandler):
     def do_HEAD(self):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
@@ -201,13 +201,13 @@ class IonAPIHandler(http.server.SimpleHTTPRequestHandler):
             return
             
         elif path == "/api/sessions":
-            sessions = IonLogger.list_sessions()
+            sessions = AangLogger.list_sessions()
             self._send_json(sessions)
             return
             
         elif path.startswith("/api/sessions/"):
             session_id = path.replace("/api/sessions/", "").strip()
-            data = IonLogger.get_session(session_id)
+            data = AangLogger.get_session(session_id)
             if data:
                 self._send_json(data)
             else:
@@ -224,9 +224,9 @@ class IonAPIHandler(http.server.SimpleHTTPRequestHandler):
                 except Exception:
                     pass
             if not latest:
-                sessions = IonLogger.list_sessions()
+                sessions = AangLogger.list_sessions()
                 if sessions:
-                    latest = IonLogger.get_session(sessions[0]["id"])
+                    latest = AangLogger.get_session(sessions[0]["id"])
             self._send_json(latest or {"error": "No sessions yet"})
             return
             
@@ -297,7 +297,7 @@ def run_server(port: int = PORT):
     for attempt in range(5):
         target_port = port + attempt
         try:
-            httpd = http.server.ThreadingHTTPServer(("", target_port), IonAPIHandler)
+            httpd = http.server.ThreadingHTTPServer(("", target_port), AangAPIHandler)
             print(f"==================================================")
             print(f"🚀 Aang Log & Harness Dashboard running on:")
             print(f"   http://localhost:{target_port}")

@@ -1,22 +1,22 @@
 # ⚡ Aang — Autonomous Terminal Coding Agent & SWE-Bench Harness
 > *High-efficiency coding agent with multi-key rotation and zero-turn context injection. Run via `npx aang-ai` or `pip install aang-ai`.*
 
-**Aang** (formerly Ion) is a high-performance, terminal-first autonomous software engineering agent and benchmark harness. Built for developer transparency and raw execution speed, Aang investigates codebases, diagnoses test failures, executes surgical multi-file edits, and verifies its work in sandboxed environments—all while streaming its reasoning in a rich terminal interface with its animated pixel mascot and a live web dashboard.
+**Aang** is a high-performance, terminal-first autonomous software engineering agent and benchmark harness. Built for developer transparency and raw execution speed, Aang investigates codebases, diagnoses test failures, executes surgical multi-file edits, and verifies its work in sandboxed environments—all while streaming its reasoning in a rich terminal interface with its animated pixel mascot and a live web dashboard.
 
 ---
 
 ## 🏛️ System Architecture
 
-Ion is architected as a modular, provider-agnostic system decoupling planning, context management, tool dispatch, and runtime sandboxing:
+Aang is architected as a modular, provider-agnostic system decoupling planning, context management, tool dispatch, and runtime sandboxing:
 
 ```mermaid
 graph TD
-    User([User / CLI / REPL]) --> TUI[Ion TUI & Control Center]
+    User([User / CLI / REPL]) --> TUI[Aang TUI & Control Center]
     User --> Web[Web Dashboard localhost:5173]
     
     subgraph "Core Orchestration"
         TUI --> Loop[AgentLoop]
-        Web -. API Polling .-> Server[Ion Server & JSON API]
+        Web -. API Polling .-> Server[Aang Server & JSON API]
         Server -. Session Store .-> Logger[Structured JSON Logger]
         Loop --> Logger
         Loop --> State[AgentState]
@@ -56,16 +56,16 @@ graph TD
 
 ## 🧠 Deep Dive: Context Management System
 
-Context degradation, token bloat, and hallucinated paths are the primary failure modes of autonomous coding agents. Ion implements a 4-tier context engineering pipeline that keeps token consumption minimal while ensuring the model acts with maximum precision from **Iteration 1**:
+Context degradation, token bloat, and hallucinated paths are the primary failure modes of autonomous coding agents. Aang implements a 4-tier context engineering pipeline that keeps token consumption minimal while ensuring the model acts with maximum precision from **Iteration 1**:
 
 ### 1. Preflight Diagnostics & Zero-Turn Context Injection
-Before the agent loop makes its first LLM call, Ion runs preflight diagnostics:
+Before the agent loop makes its first LLM call, Aang runs preflight diagnostics:
 - **Test Command Auto-Detection**: Regex-parses the task prompt or inspects `package.json` / `pytest` configs to discover the target test command (`npm test`, `pytest`, `node <test>.js`).
 - **Pre-execution Failure Capture**: Runs the test command inside the sandbox to capture initial exit codes, stdout, and stack traces.
 - **Immediate Implicated File Extraction**: Extracts erroring source files directly from the stack trace and feeds the failure output into the initial prompt. The LLM does not need to waste 1–2 iterations running tests or searching for where errors originate.
 
 ### 2. Symbol AST Indexing & Priority Ranking
-Ion features a built-in symbol indexer ([`ion/agent/indexer.py`](file:///Users/siddhanthsadashivraikar/Desktop/ion/ion/agent/indexer.py)) that scans Python and JavaScript/TypeScript files:
+Aang features a built-in symbol indexer ([`aang/agent/indexer.py`](aang/agent/indexer.py)) that scans Python and JavaScript/TypeScript files:
 - **Symbol Extraction**: Extracts classes, functions, and exports without heavyweight external language servers.
 - **Task Query Matching**: Matches words from the user task against indexed symbols and tests imports.
 - **Priority Scoring**:
@@ -80,14 +80,14 @@ Over long-running tasks (10–15 iterations), repeating large file contents and 
 
 ### 4. Self-Healing Tool Feedback
 When an LLM attempts an edit that fails (e.g. whitespace mismatch in `replace_in_file` or argument format discrepancies):
-- Ion does not return a generic failure. It returns an **Actionable Self-Healing Hint** containing the current lines from disk and instructions on how to use `read_file` or `write_file` to recover cleanly.
+- Aang does not return a generic failure. It returns an **Actionable Self-Healing Hint** containing the current lines from disk and instructions on how to use `read_file` or `write_file` to recover cleanly.
 - `read_file` and `write_file` support tolerant keyword aliases (`line_start`, `line_end`, `contents`, `text`, `code`), preventing models from stalling on tool schema mismatches.
 
 ---
 
 ## 🔄 Provider Abstraction & The Fallback Engine
 
-Ion guarantees task completion even when third-party AI APIs suffer from outages, credit limits, or transient rate limits:
+Aang guarantees task completion even when third-party AI APIs suffer from outages, credit limits, or transient rate limits:
 
 ```
 [Primary Model: Groq openai/gpt-oss-120b]
@@ -104,6 +104,7 @@ Ion guarantees task completion even when third-party AI APIs suffer from outages
 
 - **`FallbackProvider`**: Wraps any primary provider with an ordered chain of backups. When a call fails due to `402 Payment Required`, `404 Model Not Found`, or repeated `429 Rate Limits`, the engine gracefully logs the transition and retries seamlessly with the next model.
 - **Exponential Backoff**: Inspects `Retry-After` headers and error strings (e.g., `try again in 5.3s`) to perform exact countdown pauses before resuming execution.
+- **Multi-Key Rotation**: Supports comma-delimited `GROQ_API_KEYS` pools, rotating seamlessly across keys on rate limits.
 
 ---
 
@@ -113,7 +114,7 @@ All code edits and command executions run through an isolated sandbox interface:
 
 | Sandbox Mode | Description | Isolation Level | Best For |
 | :--- | :--- | :--- | :--- |
-| **`DockerSandbox`** | Spawns an isolated container mounting the repo. Non-root user permissions, strict command timeouts, and resource limits. | 🟢 Full Isolation | Untrusted code, production SWE-bench runs |
+| **`DockerSandbox`** | Spawns an isolated container mounting the repo. Non-root user permissions, strict command timeouts, and resource limits. | 🟢 Full Isolation | Untrusted code, production benchmark runs |
 | **`LocalSandbox`** | Runs directly on the host workspace with sub-millisecond execution times. | 🟡 Workspace Bound | Fast local iteration, simple scripts |
 
 ---
@@ -123,19 +124,21 @@ All code edits and command executions run through an isolated sandbox interface:
 ### 1. Terminal TUI & Interactive REPL
 Launch the full interactive TUI using:
 ```bash
-make run
-# or
-ion --repo ./sample-project
+# Zero-install via npx:
+npx aang-ai
+
+# Or with local installation:
+aang --repo .
 ```
 
 - **Live Activity Grid**: Shows current model, elapsed execution time, iteration count, and live reasoning thoughts.
 - **Unified Diff Viewer**: Type `/diff` to inspect colored syntax-highlighted git diffs of uncommitted changes.
 - **Session Logs**: Type `/log [lines]` to print the recent execution trace in the terminal.
-- **State Rollback**: Type `/rollback` to instantly reset the working tree to git clean slate.
+- **State Rollback**: Type `/rollback` to instantly reset the working tree to a clean git state.
 - **Dynamic Model Switching**: Type `/model` to view all configured providers and switch models on the fly.
 
-### 2. Web Dashboard
-Ion includes an integrated web dashboard running as a background daemon:
+### 2. Web Dashboard & Live Monitor
+Aang includes an integrated web dashboard running as a background daemon:
 ```bash
 make web
 # Starts dashboard at http://localhost:5173/
@@ -143,59 +146,77 @@ make web
 - **Timeline & Session History**: Step-by-step tree of all previous runs with duration and tool calls.
 - **Colorized Diff Viewer**: Side-by-side view of all files modified by the agent.
 - **Live Logs**: Real-time terminal output and structured JSON logs.
+- **Interactive Benchmark Trigger**: Run automated synthetic verification scenarios directly from the UI header.
 
 ---
 
 ## 🚀 Quickstart & Installation
 
-### 1. Setup Virtual Environment
+### Option 1: Run via npx (Zero Install)
+Requires Node.js 16+ and Python 3.11+.
 ```bash
-git clone https://github.com/your-username/ion.git
-cd ion
+export GROQ_API_KEY="your-key"
+npx aang-ai
+```
+
+### Option 2: Install via pip
+```bash
+pip install -e .
+export GROQ_API_KEY="your-key"
+aang --repo .
+```
+
+### Option 3: From Source
+```bash
+git clone https://github.com/frenemy17/aang.git
+cd aang
 make install
-```
-
-### 2. Configure Environment Keys
-Add your API keys to `.env` or export them in your shell:
-```bash
-# Groq (Recommended for ultra-fast, high-quota reasoning)
-export GROQ_API_KEY="gsk_..."
-
-# OpenRouter (Access to 200+ models)
-export OPENROUTER_API_KEY="sk-or-v1-..."
-
-# OpenAI Direct
-export OPENAI_API_KEY="sk-proj-..."
-
-# Anthropic Direct
-export ANTHROPIC_API_KEY="sk-ant-..."
-```
-
-### 3. Launching Tasks
-```bash
-# Interactive REPL
-make run
-
-# Headless / Automated Task Execution
-ion --repo ./sample-project "Fix the double-spend idempotency race condition in payment_service.js"
 ```
 
 ---
 
-## 📊 Benchmark Suite
+## ⚙️ Configuration & Environment Keys
 
-Ion includes built-in SWE-bench style benchmarks spanning three difficulty tiers:
-
-| Benchmark | Location | Complexity | Description | Target Iterations |
-| :--- | :--- | :--- | :--- | :--- |
-| **Easy** | [`tests/easy/`](file:///Users/siddhanthsadashivraikar/Desktop/ion/tests/easy/) | 🟢 Low | Single-file calculation logic bug (`calc.py`) | 1 Iteration |
-| **Medium** | [`tests/medium/`](file:///Users/siddhanthsadashivraikar/Desktop/ion/tests/medium/) | 🟡 Medium | Multi-function shopping cart discount & tax calculations (`cart.py`) | 2–3 Iterations |
-| **Hard** | [`tests/hard/`](file:///Users/siddhanthsadashivraikar/Desktop/ion/tests/hard/) | 🟠 High | Multi-module service orchestration, mock auth, and storage state | 3–5 Iterations |
-| **SWE-Bench** | [`sample-project/`](file:///Users/siddhanthsadashivraikar/Desktop/ion/sample-project/) | 🔴 Complex | Full e-commerce pipeline: Concurrency double-spend, inventory leak, floating-point precision | Full Suite |
-
-Run any benchmark directly:
+Add your API keys to `.env` or export them in your shell:
 ```bash
-make test-easy
-make test-medium
-make test-hard
+# Provider Selection (Default: groq)
+export AANG_PROVIDER=groq
+export AANG_MODEL=openai/gpt-oss-120b
+
+# Groq (Recommended: Supports single key or comma-separated pool for rotation)
+export GROQ_API_KEY="gsk_..."
+export GROQ_API_KEYS="gsk_key1,gsk_key2,gsk_key3"
+
+# OpenRouter (Optional: Access to 200+ models)
+export OPENROUTER_API_KEY="sk-or-v1-..."
+
+# OpenAI Direct (Optional)
+export OPENAI_API_KEY="sk-proj-..."
+
+# Anthropic Direct (Optional)
+export ANTHROPIC_API_KEY="sk-ant-..."
 ```
+
+---
+
+## 🎯 Usage Examples
+
+### Interactive Session
+```bash
+aang --repo /path/to/project
+```
+
+### Headless / Automated Task Execution
+```bash
+aang --repo /path/to/project "Fix the failing tests in test_payment.py and handle edge cases"
+```
+
+### Specifying Models and Log Output
+```bash
+aang --repo . --provider groq --model openai/gpt-oss-120b --log ./my-run.log "Refactor authentication module"
+```
+
+---
+
+## 📄 License
+MIT License. Built with ❤️ for autonomous software engineering.

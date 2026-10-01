@@ -78,7 +78,7 @@ AVAILABLE_MODELS = [
 def get_provider(name: str, model: str, api_key: str = None, base_url: str = None) -> LLMProvider:
     name_lower = name.lower()
     if name_lower == "openrouter":
-        return OpenRouterProvider(model, api_key or os.getenv("OPENROUTER_API_KEY", "") or os.getenv("ION_API_KEY", ""), base_url)
+        return OpenRouterProvider(model, api_key or os.getenv("OPENROUTER_API_KEY", "") or os.getenv("AANG_API_KEY", "") or os.getenv("ION_API_KEY", ""), base_url)
     elif name_lower == "openai":
         return OpenAIProvider(model, api_key or os.getenv("OPENAI_API_KEY", ""), base_url)
     elif name_lower == "anthropic":
@@ -95,7 +95,7 @@ def get_provider(name: str, model: str, api_key: str = None, base_url: str = Non
 def get_provider_by_model_id(model_id: str, default_api_key: str = None) -> LLMProvider:
     for m in AVAILABLE_MODELS:
         if m["id"] == model_id:
-            key = default_api_key or os.getenv(m["env_key"], "") or os.getenv("ION_API_KEY", "")
+            key = default_api_key or os.getenv(m["env_key"], "") or os.getenv("AANG_API_KEY", "") or os.getenv("ION_API_KEY", "")
             return get_provider(m["provider"], m["id"], key, m["base_url"])
     # Default fallback
     if "openrouter" in model_id.lower() or "/" in model_id:

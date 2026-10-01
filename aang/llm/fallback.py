@@ -4,7 +4,7 @@ from typing import List, Dict, Any, Optional, Callable
 from .base import LLMProvider
 from .types import Message, LLMResponse
 
-logger = logging.getLogger("ion.llm.fallback")
+logger = logging.getLogger("aang.llm.fallback")
 
 class FallbackProvider(LLMProvider):
     """Wraps a primary provider with one or more backup providers.

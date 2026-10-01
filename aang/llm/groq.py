@@ -7,7 +7,7 @@ from .openai import OpenAICompatibleProvider
 from .types import Message, LLMResponse
 from aang.config.settings import settings
 
-logger = logging.getLogger("ion.llm.groq")
+logger = logging.getLogger("aang.llm.groq")
 
 class GroqProvider(OpenAICompatibleProvider):
     """Groq Provider with automatic multi-key rotation and rate-limit mitigation.
