@@ -23,11 +23,12 @@ _current_run = {
     "start_time": 0
 }
 
-def execute_harness_task(task_type: str, custom_task: Optional[str] = None):
-    """Executes a harness task in a separate process/thread so the UI remains responsive."""
+def execute_agent_task(task: str, repo: Optional[str] = None):
+    """Executes an agent task in a separate process/thread so the UI remains responsive."""
     global _current_run
     _current_run["active"] = True
-    _current_run["type"] = task_type
+    _current_run["task"] = task
+    _current_run["type"] = "agent"
     _current_run["start_time"] = time.time()
     
     aang_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -39,51 +40,15 @@ def execute_harness_task(task_type: str, custom_task: Optional[str] = None):
     if not env.get("GROQ_API_KEY") and settings.api_key:
         env["GROQ_API_KEY"] = settings.api_key
         
+    target_repo = os.path.abspath(repo) if repo else aang_root
     try:
-        if task_type == "easy":
-            tmp_repo = "/tmp/aang-test-easy"
-            subprocess.run(f"rm -rf {tmp_repo} && mkdir -p {tmp_repo}", shell=True)
-            with open(f"{tmp_repo}/calc.py", "w") as f:
-                f.write("def add(a, b):\n    return a - b  # bug: subtraction instead of addition\n")
-            with open(f"{tmp_repo}/test_calc.py", "w") as f:
-                f.write("from calc import add\ndef test_add():\n    assert add(2, 3) == 5\n")
-            subprocess.run(f"cd {tmp_repo} && git init && git add -A && git commit -m 'init' 2>/dev/null", shell=True)
-            task_cmd = f"Fix the failing test. Run: python -m pytest test_calc.py"
-            repo = tmp_repo
-        elif task_type == "medium":
-            tmp_repo = "/tmp/aang-test-medium"
-            subprocess.run(f"rm -rf {tmp_repo} && mkdir -p {tmp_repo}", shell=True)
-            with open(f"{tmp_repo}/cart.py", "w") as f:
-                f.write("def calculate_total(items, discount=0):\n    subtotal = sum(i['price'] * i.get('qty', 1) for i in items)\n    return subtotal - (subtotal * discount / 10)  # bug: /10 instead of /100\n")
-            with open(f"{tmp_repo}/test_cart.py", "w") as f:
-                f.write("from cart import calculate_total\ndef test_cart():\n    items = [{'price': 100, 'qty': 2}]\n    assert calculate_total(items, discount=10) == 180\n")
-            subprocess.run(f"cd {tmp_repo} && git init && git add -A && git commit -m 'init' 2>/dev/null", shell=True)
-            task_cmd = f"Fix the failing test. Run: python -m pytest test_cart.py"
-            repo = tmp_repo
-        elif task_type == "hard":
-            tmp_repo = "/tmp/aang-test-hard"
-            subprocess.run(f"rm -rf {tmp_repo} && mkdir -p {tmp_repo}", shell=True)
-            with open(f"{tmp_repo}/validator.py", "w") as f:
-                f.write("def validate_age(age):\n    return age > 18  # bug: should be >= 18\n")
-            with open(f"{tmp_repo}/user.py", "w") as f:
-                f.write("from validator import validate_age\nclass User:\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n        self.is_adult = validate_age(age)\n")
-            with open(f"{tmp_repo}/test_user.py", "w") as f:
-                f.write("from user import User\ndef test_user():\n    u = User('Alice', 18)\n    assert u.is_adult is True\n")
-            subprocess.run(f"cd {tmp_repo} && git init && git add -A && git commit -m 'init' 2>/dev/null", shell=True)
-            task_cmd = f"Fix the failing test. Run: python -m pytest"
-            repo = tmp_repo
-        else:
-            repo = aang_root
-            task_cmd = custom_task or "Analyze repository and report architecture status"
-
         cmd = [
             venv_python, "-m", "aang.main",
-            "--repo", repo,
+            "--repo", target_repo,
             "--log", os.path.join(aang_root, "aang.log"),
-            task_cmd
+            task
         ]
-        
-        proc = subprocess.run(cmd, cwd=aang_root, env=env, capture_output=True, text=True)
+        subprocess.run(cmd, cwd=target_repo, env=env, capture_output=True, text=True)
     finally:
         _current_run["active"] = False
 
@@ -260,20 +225,20 @@ class AangAPIHandler(http.server.SimpleHTTPRequestHandler):
             except Exception:
                 data = {}
                 
-            task_type = data.get("type", "easy")
-            custom_task = data.get("task")
+            task = data.get("task") or "Analyze repository code structure and verify health"
+            repo = data.get("repo")
             
             if _current_run["active"]:
                 self._send_json({"error": "A task run is already in progress"}, 409)
                 return
                 
-            thread = threading.Thread(target=execute_harness_task, args=(task_type, custom_task), daemon=True)
+            thread = threading.Thread(target=execute_agent_task, args=(task, repo), daemon=True)
             thread.start()
             
             self._send_json({
                 "status": "started",
-                "type": task_type,
-                "message": f"Harness run '{task_type}' initiated."
+                "task": task,
+                "message": f"Agent task initiated: {task}"
             })
             return
 
