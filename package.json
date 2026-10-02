@@ -4,7 +4,8 @@
   "description": "Aang — Autonomous Terminal Coding Agent & SWE-Bench Harness",
   "main": "bin/aang.js",
   "bin": {
-    "aang": "bin/aang.js"
+    "aang": "bin/aang.js",
+    "aang-ai": "bin/aang.js"
   },
   "keywords": [
     "ai",
