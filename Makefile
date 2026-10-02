@@ -1,4 +1,4 @@
-.PHONY: install aang tui run web log-ui clean
+.PHONY: install aang tui run web setup doctor log-ui clean
 
 VENV = venv/bin
 AANG = $(VENV)/aang
@@ -7,14 +7,20 @@ PYTHON = $(VENV)/python
 install:
 	python3 -m venv venv
 	$(VENV)/pip install -e .
-	@echo "✓ Aang installed. Ensure your API key is exported:"
-	@echo "  export GROQ_API_KEY=your-key"
+	@echo "✓ Aang installed! Run 'make setup' (or 'aang setup') to configure your API keys."
+	@echo "  Run 'make aang' (or 'aang') to start coding."
 
 aang:
 	$(AANG) --repo .
 
 tui:
 	$(AANG) --repo .
+
+setup:
+	$(AANG) setup
+
+doctor:
+	$(AANG) doctor
 
 run:
 	$(AANG) --repo . "$(TASK)"

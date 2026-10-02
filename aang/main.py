@@ -35,14 +35,54 @@ def create_sandbox(repo_path: str):
         return sandbox
 
 def main():
-    parser = argparse.ArgumentParser(description="Aang - Autonomous Terminal Coding Agent")
-    parser.add_argument("--repo", type=str, default=".", help="Path to the repository")
-    parser.add_argument("--provider", type=str, default=settings.effective_provider, help="LLM Provider (groq, openai, anthropic, ollama)")
+    parser = argparse.ArgumentParser(
+        description="""\
+🌪️  Aang — Autonomous Terminal Coding Agent & SWE-Bench Harness
+
+Interactive TUI:
+  aang                   Launch interactive mascot terminal in current directory
+  aang --repo ./dir      Launch interactive mascot terminal targeting a directory
+
+Quick Commands:
+  aang setup             Run interactive setup wizard to configure API keys
+  aang doctor            Diagnose environment (Python, Git, Docker, API connectivity)
+  aang web               Launch live web visualizer & session inspector
+  aang "Fix bug in X"    Execute an automated coding task directly in current workspace""",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""\
+Examples:
+  aang setup
+  aang doctor
+  aang "Add unit tests for payment processing in tests/test_payment.py"
+  aang --provider groq --model openai/gpt-oss-120b
+  aang web
+"""
+    )
+    parser.add_argument("--repo", type=str, default=".", help="Path to target repository (default: current directory)")
+    parser.add_argument("--provider", type=str, default=settings.effective_provider, help="LLM Provider (groq, openrouter, openai, anthropic, ollama)")
     parser.add_argument("--model", type=str, default=settings.effective_model, help="Model name")
     parser.add_argument("--log", type=str, default="aang.log", help="Path to detailed log file")
-    parser.add_argument("task", nargs="?", type=str, help="The coding task to perform (interactive if omitted)")
+    parser.add_argument("task", nargs="?", type=str, help="Coding task or subcommand: setup | doctor | web | '<task description>'")
     
     args = parser.parse_args()
+
+    # Check for instant convenience subcommands
+    task_arg = (args.task or "").strip().lower()
+    if task_arg in ["setup", "config", "init"]:
+        from aang.config.onboarding import run_onboarding_wizard
+        run_onboarding_wizard(console, force=True)
+        return
+
+    if task_arg in ["doctor", "check"]:
+        from aang.config.onboarding import run_doctor
+        run_doctor(console)
+        return
+
+    if task_arg in ["web", "ui", "dashboard"]:
+        from aang.server import run_server
+        run_server(5173)
+        return
+
     repo_path = os.path.abspath(args.repo)
     
     # Verify repo exists
@@ -73,11 +113,20 @@ def main():
     # Setup LLM Provider - resolve API key from multiple sources
     api_key = settings.effective_api_key or settings.api_key or os.getenv(f"{args.provider.upper()}_API_KEY") or os.getenv("AANG_API_KEY") or os.getenv("ION_API_KEY")
     if not api_key and args.provider != "ollama":
-        console.print(f"[red]Error: API key not found. Set one of:[/red]")
-        console.print(f"  export AANG_API_KEY=your-key")
-        console.print(f"  export {args.provider.upper()}_API_KEY=your-key")
-        sandbox.cleanup()
-        sys.exit(1)
+        if sys.stdin.isatty():
+            from aang.config.onboarding import run_onboarding_wizard
+            cfg = run_onboarding_wizard(console)
+            args.provider = cfg.get("AANG_PROVIDER", args.provider)
+            args.model = cfg.get("AANG_MODEL", args.model)
+            api_key = cfg.get("AANG_API_KEY") or os.getenv("GROQ_API_KEY") or os.getenv("OPENROUTER_API_KEY") or os.getenv("OPENAI_API_KEY") or os.getenv("ANTHROPIC_API_KEY")
+            
+        if not api_key and args.provider != "ollama":
+            console.print(f"[red]Error: API key not configured.[/red]")
+            console.print(f"Run [bold cyan]aang setup[/bold cyan] to configure your AI provider, or export:")
+            console.print(f"  export GROQ_API_KEY=your-key")
+            console.print(f"  export AANG_API_KEY=your-key")
+            sandbox.cleanup()
+            sys.exit(1)
 
     base_url = settings.base_url
     primary_provider = get_provider(args.provider, args.model, api_key, base_url)

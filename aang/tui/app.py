@@ -147,8 +147,8 @@ class AangTUI:
         table.add_row("/blink", "Quick eyes blinking animation", "/blink")
         table.add_row("/glow", "Avatar State glowing blue eyes", "/glow")
         table.add_row("/loop", "Continuous blinking & glowing animation", "/loop")
-        table.add_row("/web", "Show web dashboard URL & status", "/web")
-        table.add_row("/stop", "Stop active task (or use Ctrl+C)", "/stop")
+        table.add_row("/setup", "Interactive setup wizard for API keys", "/setup")
+        table.add_row("/doctor", "System health & environment diagnostics", "/doctor")
         table.add_row("/clear", "Clear terminal screen", "/clear")
         table.add_row("/help", "Show this command reference", "/help")
         table.add_row("/exit, /quit", "Exit Aang session", "/exit")
@@ -616,6 +616,8 @@ class AangTUI:
     def interactive_shell(self, default_max_iterations: int = 15):
         """Launch the Aang interactive command console REPL."""
         self.print_banner()
+        from aang.config.onboarding import print_startup_guide, run_onboarding_wizard, run_doctor
+        print_startup_guide(self.console)
 
         while True:
             try:
@@ -635,10 +637,19 @@ class AangTUI:
                 if user_input == "/clear":
                     self.console.clear()
                     self.print_banner()
+                    print_startup_guide(self.console)
                     continue
 
                 if user_input in ["/help", "help"]:
                     self.show_help()
+                    continue
+
+                if user_input in ["/setup", "/config", "setup", "config"]:
+                    run_onboarding_wizard(self.console, force=True)
+                    continue
+
+                if user_input in ["/doctor", "doctor"]:
+                    run_doctor(self.console)
                     continue
 
                 if user_input in ["/model", "/models", "models"]:

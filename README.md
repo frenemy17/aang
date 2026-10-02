@@ -150,40 +150,63 @@ make web
 
 ---
 
-## 🚀 Quickstart & Installation
+## 🚀 Quickstart & Onboarding
 
 ### Option 1: Run via npx (Zero Install)
 Requires Node.js 16+ and Python 3.11+.
 ```bash
-export GROQ_API_KEY="your-key"
 npx aang-ai
 ```
+> *On your first run, Aang automatically launches an interactive setup wizard to help you connect your preferred AI provider (Groq, OpenRouter, OpenAI, Anthropic, or Local Ollama) in under 30 seconds.*
 
-### Option 2: Install via pip
+### Option 2: Install Globally via npm
 ```bash
-pip install -e .
-export GROQ_API_KEY="your-key"
-aang --repo .
+npm install -g aang-ai
+aang setup       # Configure API keys globally
+aang             # Start coding
 ```
 
-### Option 3: From Source
+### Option 3: Install via pip
+```bash
+pip install -e .
+aang setup
+aang
+```
+
+### Option 4: From Source
 ```bash
 git clone https://github.com/frenemy17/aang.git
 cd aang
 make install
+make setup       # Interactive onboarding wizard
+make aang        # Start interactive session
 ```
+
+---
+
+## ⚡ Built-in Commands & CLI Shortcuts
+
+| Command | Description | Example |
+| :--- | :--- | :--- |
+| **`aang`** | Starts interactive TUI session in current directory | `aang` |
+| **`aang "task"`** | Runs a coding task directly in current workspace | `aang "Fix failing tests in user.py"` |
+| **`aang setup`** | Interactive wizard to configure or update API keys | `aang setup` |
+| **`aang doctor`** | Health check: Python, Git, Docker, and API connectivity | `aang doctor` |
+| **`aang web`** | Starts live web monitor and session inspector | `aang web` (http://localhost:5173) |
+| **`aang --repo <path>`** | Target a specific repository or workspace folder | `aang --repo ~/Desktop/my-project` |
 
 ---
 
 ## ⚙️ Configuration & Environment Keys
 
-Add your API keys to `.env` or export them in your shell:
+Keys can be configured interactively using `aang setup` (saved to `~/.aang/.env` for all projects), or exported directly in your shell or `.env`:
+
 ```bash
 # Provider Selection (Default: groq)
 export AANG_PROVIDER=groq
 export AANG_MODEL=openai/gpt-oss-120b
 
-# Groq (Recommended: Supports single key or comma-separated pool for rotation)
+# Groq (Recommended: Ultra-fast reasoning & free tier at console.groq.com)
 export GROQ_API_KEY="gsk_..."
 export GROQ_API_KEYS="gsk_key1,gsk_key2,gsk_key3"
 
@@ -201,19 +224,26 @@ export ANTHROPIC_API_KEY="sk-ant-..."
 
 ## 🎯 Usage Examples
 
-### Interactive Session
+### Interactive Session with Mascot & Diff Inspector
 ```bash
-aang --repo /path/to/project
+aang
 ```
+Inside the interactive session, use slash commands:
+- `/help` — View commands cheatsheet
+- `/setup` — Reconfigure providers or API keys
+- `/model` — Switch AI models on the fly
+- `/diff` — View git diff of changes made by Aang
+- `/rollback` — Undo recent changes
+- `/exit` — Quit
 
-### Headless / Automated Task Execution
+### Automated / Headless Execution
 ```bash
-aang --repo /path/to/project "Fix the failing tests in test_payment.py and handle edge cases"
+aang "Fix the failing tests in test_payment.py and handle edge cases"
 ```
 
 ### Specifying Models and Log Output
 ```bash
-aang --repo . --provider groq --model openai/gpt-oss-120b --log ./my-run.log "Refactor authentication module"
+aang --provider groq --model openai/gpt-oss-120b --log ./my-run.log "Refactor authentication module"
 ```
 
 ---

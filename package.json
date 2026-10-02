@@ -1,6 +1,6 @@
 {
   "name": "aang-ai",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Aang — Autonomous Terminal Coding Agent & SWE-Bench Harness",
   "main": "bin/aang.js",
   "bin": {

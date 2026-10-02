@@ -4,6 +4,9 @@ from typing import Optional
 from dotenv import load_dotenv
 
 load_dotenv()
+global_env_path = os.path.expanduser("~/.aang/.env")
+if os.path.exists(global_env_path):
+    load_dotenv(global_env_path)
 
 class Settings(BaseSettings):
     provider: str = "openrouter"
