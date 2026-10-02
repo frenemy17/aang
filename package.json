@@ -4,7 +4,7 @@
   "description": "Aang — Autonomous Terminal Coding Agent & SWE-Bench Harness",
   "main": "bin/aang.js",
   "bin": {
-    "aang": "./bin/aang.js"
+    "aang": "bin/aang.js"
   },
   "keywords": [
     "ai",
@@ -20,7 +20,7 @@
   "author": "",
   "repository": {
     "type": "git",
-    "url": "https://github.com/frenemy17/aang.git"
+    "url": "git+https://github.com/frenemy17/aang.git"
   },
   "homepage": "https://github.com/frenemy17/aang#readme",
   "bugs": {
